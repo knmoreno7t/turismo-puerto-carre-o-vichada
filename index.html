@@ -1,0 +1,451 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explora Puerto Carreño: aventura, cultura llanera y naturaleza en la Orinoquía. Reserva tu viaje hoy con Hilder Moreno.">
+    <meta name="keywords" content="Puerto Carreño, turismo, Orinoquía, naturaleza, cultura llanera, pesca, delfines rosados">
+    <meta name="author" content="Hilder Moreno - Turismo Puerto Carreño">
+    <title>Catálogo Turístico Puerto Carreño</title>
+    <style>
+        /* Fuentes optimizadas para rendimiento y branding */
+        @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@500;700;900&display=swap');
+
+        :root {
+            --primary: #e67e22; /* Naranja vibrante para destacar */
+            --secondary: #1a252f; /* Azul oscuro sofisticado */
+            --accent: #f4d03f; /* Dorado suave para contraste */
+            --bg-light: #f5f7fa; /* Fondo limpio y moderno */
+            --text-dark: #2c3e50; /* Texto legible y profesional */
+            --shadow: 0 3px 10px rgba(0, 0, 0, 0.08); /* Sombra sutil */
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 25px 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            margin-bottom: 20px;
+            border-radius: 0 0 15px 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .header h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 2.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .triptych {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .panel:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+        }
+
+        .panel .content {
+            padding: 15px;
+            text-align: center;
+        }
+
+        .panel h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: var(--secondary);
+            margin: 10px 0;
+        }
+
+        .carousel {
+            position: relative;
+            width: 100%;
+            height: 260px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .carousel img {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 100%;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+            opacity: 0;
+        }
+
+        .carousel img.active {
+            transform: translateX(-100%);
+            opacity: 1;
+        }
+
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            z-index: 10;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .carousel-btn:hover {
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .carousel-btn.prev { left: 10px; }
+        .carousel-btn.next { right: 10px; }
+
+        .carousel-dots {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+
+        .carousel-dot {
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .carousel-dot.active {
+            background: var(--accent);
+            transform: scale(1.4);
+        }
+
+        .qr-code {
+            width: 110px;
+            height: 110px;
+            margin: 10px auto;
+            transition: var(--transition);
+        }
+
+        .qr-code:hover {
+            transform: scale(1.1);
+        }
+
+        .map-container {
+            width: 100%;
+            height: 280px;
+            margin: 10px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .logo-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .logo {
+            width: 380px;
+            height: 228px;
+            object-fit: contain;
+            transition: var(--transition);
+            display: block;
+            margin: 0 auto 10px;
+            margin-left: -36px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .logo:hover {
+            transform: scale(1.05) translateX(-5px);
+        }
+
+        .footer {
+            padding: 15px 0;
+            background: var(--secondary);
+            color: white;
+            text-align: center;
+            border-radius: 15px 15px 0 0;
+            margin-top: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+            transition: var(--transition);
+        }
+
+        .footer a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .carousel, .carousel img { height: 200px; }
+            .map-container { height: 200px; }
+            .logo { width: 260px; height: 156px; margin-left: -26px; }
+        }
+
+        @media (min-width: 1200px) {
+            .container { padding: 0; }
+            .triptych { gap: 15px; }
+            .panel { padding: 10px; }
+            .panel .content { padding: 10px; }
+            .carousel { margin-bottom: 5px; }
+            .map-container { margin: 5px 0; }
+            .logo-container { margin: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>¡Descubre Puerto Carreño!</h1>
+        </header>
+        <div class="triptych">
+            <!-- Panel 1: Portada -->
+            <div class="panel" role="region" aria-label="Portada de Puerto Carreño">
+                <div class="content">
+                    <div class="carousel" id="carousel-portada">
+                        <img src="https://www.dropbox.com/scl/fi/7t4d0mg1d61m6a24112ph/c23f20ce-8d92-4369-810f-ac5a89faba18.jpg?rlkey=td3y1ocinrf9e4rzvb5qqh6e6&st=phmiv6xl&dl=1" alt="Río Orinoco al atardecer" class="active">
+                        <img src="https://www.dropbox.com/scl/fi/h33r1hitbghxj5rbau4y9/2c1e77cd-fa4f-4e13-b49d-4b8a54d94e1c.jpg?rlkey=1n2xfulb9tttblcajhgf4pnu9&st=ugito15n&dl=1" alt="Río Bita" class="">
+                        <img src="https://www.dropbox.com/scl/fi/2l00l350ijtfm2kj3df7n/Ca-o-juriepe.jpg?rlkey=mq4ob6chcwg4ps4wmqc4cyiwy&st=jaedsglb&dl=1" alt="Caño Juriepe" class="">
+                        <img src="https://www.dropbox.com/scl/fi/i1ozmt09765sd3j7xrf3u/PTO-Carre-o.jpg?rlkey=w6qh1euf4083mlwe44hnsc4ec&st=et2uf5y8&dl=1" alt="Vista aérea Puerto Carreño" class="">
+                        <button class="carousel-btn prev" aria-label="Anterior" onclick="changeSlide('carousel-portada', -1)">❮</button>
+                        <button class="carousel-btn next" aria-label="Siguiente" onclick="changeSlide('carousel-portada', 1)">❯</button>
+                        <div class="carousel-dots">
+                            <span class="carousel-dot active" onclick="goToSlide('carousel-portada', 0)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-portada', 1)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-portada', 2)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-portada', 3)"></span>
+                        </div>
+                    </div>
+                    <p>La Perla de la Orinoquía te ofrece ríos majestuosos y cultura vibrante.</p>
+                    <p><strong>¡Reserva tu aventura!</strong></p>
+                </div>
+                <div class="logo-container">
+                    <img src="https://www.dropbox.com/scl/fi/uae1347qnrnukbzp8pl2g/7e1dcf57-3a33-4d64-89a8-3ad576932a28.png?rlkey=tzyrr6fyf48iasm5wvety7pzm&st=wkdp9w9y&dl=1" alt="Logotipo Turismo Puerto Carreño" class="logo">
+                </div>
+            </div>
+            <!-- Panel 2: Naturaleza y Cultura -->
+            <div class="panel" role="region" aria-label="Naturaleza y Cultura">
+                <div class="content">
+                    <h2>Naturaleza y Aventura</h2>
+                    <div class="carousel" id="carousel-naturaleza">
+                        <img src="https://www.dropbox.com/scl/fi/i4iz50bp72q2v2d1wl2l4/download.jpg?rlkey=sb8x27ms0bfsaskrdb9zcko1t&st=kp8dm8ao&dl=1" alt="Raudal de Maipures" class="active">
+                        <img src="https://www.dropbox.com/scl/fi/1dox1zauuwsrsxvn8uv59/1bc79acf-d8ba-4e0f-acd0-62d7f647ad57.jpg?rlkey=chafp3gqhpiyrenbymwu9w30i&st=lfmvim5m&dl=1" alt="Piscinas Ventanas" class="">
+                        <img src="https://www.dropbox.com/scl/fi/u7s4d2hxy1g80fa2wo2g3/6fd0a5a0-38e8-4651-a3a0-2686f8682ac4.jpg?rlkey=b6ag1whren2b1vw2owb3bo6ll&st=53qwr8cb&dl=1" alt="Amanecer río Bita" class="">
+                        <img src="https://www.dropbox.com/scl/fi/o375dj6a4iyzk699bbunt/tuparro.jpg?rlkey=521oxg973marwdvm4idd2sjog&st=ka9854bv&dl=1" alt="Parque Tuparro" class="">
+                        <img src="https://www.dropbox.com/scl/fi/9j9qiauduhj062qjrym3u/Maipures.jpg?rlkey=vk3vix02m4l2g0uo3xyvanb35&st=swb5moqs&dl=1" alt="Raudal Maipures" class="">
+                        <button class="carousel-btn prev" aria-label="Anterior" onclick="changeSlide('carousel-naturaleza', -1)">❮</button>
+                        <button class="carousel-btn next" aria-label="Siguiente" onclick="changeSlide('carousel-naturaleza', 1)">❯</button>
+                        <div class="carousel-dots">
+                            <span class="carousel-dot active" onclick="goToSlide('carousel-naturaleza', 0)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-naturaleza', 1)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-naturaleza', 2)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-naturaleza', 3)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-naturaleza', 4)"></span>
+                        </div>
+                    </div>
+                    <p>Pesca, acampada y parques naturales te esperan.</p>
+                    <h2>Cultura Llanera</h2>
+                    <div class="carousel" id="carousel-cultura">
+                        <img src="https://www.dropbox.com/scl/fi/s8fwohjv38ufou7rhswhe/joropo.jpg?rlkey=xj88gv7vppkiemlns9pwbguby&st=50sojbtd&dl=1" alt="Baile joropo" class="active">
+                        <img src="https://www.dropbox.com/scl/fi/zvchk5u1db47klcsl52cm/b0b830e8-0b85-4d27-bf66-34cd9642c653.jpg?rlkey=k3je17vc4a780za0vcpi376vp&st=yia2p8bn&dl=1" alt="Artesanías indígenas" class="">
+                        <img src="https://www.dropbox.com/scl/fi/b61wcbsg0nkqma9yo421w/delfines-rosados-en-el-rio-Orinoco.webp?rlkey=bsxfuwnzo0dh5737p5isgzi9t&st=purhhhtn&dl=1" alt="Delfines rosados" class="">
+                        <img src="https://www.dropbox.com/scl/fi/1gy9i7km9y73o08g2rakj/77f80a63-a51b-4d8d-8b32-d369e13b9f31.jpg?rlkey=4a9gntj1q1omskagm9xdzg4fd&st=d3cw63bl&dl=1" alt="Paisaje Orinoco" class="">
+                        <img src="https://www.dropbox.com/scl/fi/2n5hqlwxl5nsk3tzvg4vs/0fa82321-4696-4faf-9dbc-ea2fff972bfc.jpg?rlkey=40jmn1ifkghfis4e88cma4zz9&st=vr4vsbgn&dl=1" alt="Música llanera" class="">
+                        <img src="https://www.dropbox.com/scl/fi/2xzxa5laac79grz0z9akx/545ac293-57fb-47ca-a07a-42317cb3424a.jpg?rlkey=fhh4poh9tshq7uo8k8svv41vt&st=z7f3bf3d&dl=1" alt="Artesanías llaneras" class="">
+                        <img src="https://www.dropbox.com/scl/fi/cqs109ci63ta9nlt31ny3/33210b92-5b8c-4ed9-928d-7c89d9940121.jpg?rlkey=n3y7i1adwtax98zupygucpnjj&st=n7gk4uyn&dl=1" alt="Grupo joropo" class="">
+                        <button class="carousel-btn prev" aria-label="Anterior" onclick="changeSlide('carousel-cultura', -1)">❮</button>
+                        <button class="carousel-btn next" aria-label="Siguiente" onclick="changeSlide('carousel-cultura', 1)">❯</button>
+                        <div class="carousel-dots">
+                            <span class="carousel-dot active" onclick="goToSlide('carousel-cultura', 0)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-cultura', 1)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-cultura', 2)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-cultura', 3)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-cultura', 4)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-cultura', 5)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-cultura', 6)"></span>
+                        </div>
+                    </div>
+                    <p>Vive la tradición llanera con música y artesanías.</p>
+                </div>
+            </div>
+            <!-- Panel 3: Información Práctica -->
+            <div class="panel" role="region" aria-label="Información de Viaje">
+                <div class="content">
+                    <h2>Planifica tu Viaje</h2>
+                    <div class="carousel" id="carousel-info">
+                        <img src="https://www.dropbox.com/scl/fi/p8sulndmchpso3ryex8qv/Aeropuerto.jpg?rlkey=xb1yziifvw4z47q0yln5col4x&st=sic2dlav&dl=1" alt="Aeropuerto" class="active">
+                        <img src="https://www.dropbox.com/scl/fi/wg2wihpit7t13hxdalbg0/camping-rio-bita-fotor-bg-remover-2025060717281.png?rlkey=2p0r9tup0g6qxcykfrhqw8tn2&st=rcj2564z&dl=1" alt="Camping río Bita" class="">
+                        <img src="https://www.dropbox.com/scl/fi/zgv04wae6ozsnzh6oudnf/delfin-rosado.jpg?rlkey=0umi3tkupal7jm62wpbf2bpph&st=06y834od&dl=1" alt="Delfín rosado" class="">
+                        <img src="https://www.dropbox.com/scl/fi/jarp00r2r267jd5kfvzzj/capital.jpg?rlkey=4sr57kxuu04ti5esifcn1uibg&st=gz7all4d&dl=1" alt="Capital" class="">
+                        <img src="https://www.dropbox.com/scl/fi/egzumcl7zn7hw9qjwegw7/5c8767ae-22ed-44ca-b598-c3fada790655.jpg?rlkey=tb4vpplqud9hz9uxjbkfce4ji&st=guryb99p&dl=1" alt="Paisaje natural" class="">
+                        <img src="https://www.dropbox.com/scl/fi/z2yzybbwdja2yufyuj1g2/bkFsnquA-fotor-bg-remover-2025060717445.png?rlkey=72di68bu3db4eritu9qlk45m2&st=9h9hzudx&dl=1" alt="Comida típica" class="">
+                        <img src="https://www.dropbox.com/scl/fi/b8m7ri3ts2n2uwhop78am/Camping.jpg?rlkey=jj2rhgjigyuvvb1rtmqy56nfw&st=zp77ymvh&dl=1" alt="Camping Puerto Carreño" class="">
+                        <button class="carousel-btn prev" aria-label="Anterior" onclick="changeSlide('carousel-info', -1)">❮</button>
+                        <button class="carousel-btn next" aria-label="Siguiente" onclick="changeSlide('carousel-info', 1)">❯</button>
+                        <div class="carousel-dots">
+                            <span class="carousel-dot active" onclick="goToSlide('carousel-info', 0)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-info', 1)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-info', 2)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-info', 3)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-info', 4)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-info', 5)"></span>
+                            <span class="carousel-dot" onclick="goToSlide('carousel-info', 6)"></span>
+                        </div>
+                    </div>
+                    <p><strong>Cómo llegar:</strong> Vuelos Satena o fluvial desde el puerto.</p>
+                    <p><strong>Contacto:</strong> <a href="https://wa.me/3214249301" target="_blank" style="color: var(--accent);">+57 321 424 9301</a> - Hilder Moreno.</p>
+                    <p><strong>Alojamiento:</strong> Hoteles desde $45.000 COP o campamentos en ríos.</p>
+                    <p><strong>Gastronomía:</strong> Payara asada, sancocho llanero y más.</p>
+                    <p><strong>Consejos:</strong> Repelente, protector solar, vacuna fiebre amarilla.</p>
+                    <img class="qr-code" src="https://www.dropbox.com/scl/fi/u55nvypck9px0ldma6ezg/frame.png?rlkey=cv4v5aeh2o9606urq7ebualcr&st=azfofiky&dl=1" alt="Mapa interactivo QR">
+                    <p>Explora nuestro <a href="https://www.google.com/maps/d/u/0/embed?mid=184kTpAG36o9zP2yx1arZDdTt0mB_KNQ" target="_blank" style="color: var(--accent);">mapa interactivo</a>.</p>
+                    <div class="map-container" role="region" aria-label="Mapa de Puerto Carreño">
+                        <iframe src="https://www.google.com/maps/d/u/0/embed?mid=184kTpAG36o9zP2yx1arZDdTt0mB_KNQ" width="100%" height="100%" title="Mapa interactivo"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="footer">
+            <p>Contacta al Consejo: <a href="mailto:info@turismovichada.co">info@turismovichada.co</a> | <a href="http://www.ecoglobalexpeditions.com" target="_blank">ecoglobalexpeditions.com</a></p>
+            <p>Contacto: <a href="https://wa.me/3214249301" target="_blank" style="color: var(--accent);">+57 321 424 9301</a> | <a href="mailto:neiltorres17kt@gmail.com" style="color: var(--accent);">neiltorres17kt@gmail.com</a></p>
+            <p>© 2023 Catálogo Turístico Puerto Carreño. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+    <script>
+        const carousels = document.querySelectorAll('.carousel');
+        carousels.forEach(carousel => {
+            const id = carousel.id;
+            let index = 0;
+            const images = carousel.querySelectorAll('img');
+            const dots = carousel.querySelectorAll('.carousel-dot');
+            const autoPlay = setInterval(() => changeSlide(id, 1), 5500);
+
+            carousel.addEventListener('mouseenter', () => clearInterval(autoPlay));
+            carousel.addEventListener('mouseleave', () => setInterval(() => changeSlide(id, 1), 5500));
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowLeft') changeSlide(id, -1);
+                if (e.key === 'ArrowRight') changeSlide(id, 1);
+            });
+        });
+
+        function changeSlide(id, dir) {
+            const carousel = document.getElementById(id);
+            const images = carousel.querySelectorAll('img');
+            const dots = carousel.querySelectorAll('.carousel-dot');
+            let index = Array.from(images).findIndex(img => img.classList.contains('active'));
+            images[index].classList.remove('active');
+            dots[index].classList.remove('active');
+            index = (index + dir + images.length) % images.length;
+            images[index].classList.add('active');
+            dots[index].classList.add('active');
+        }
+
+        function goToSlide(id, idx) {
+            const carousel = document.getElementById(id);
+            const images = carousel.querySelectorAll('img');
+            const dots = carousel.querySelectorAll('.carousel-dot');
+            const current = Array.from(images).findIndex(img => img.classList.contains('active'));
+            images[current].classList.remove('active');
+            dots[current].classList.remove('active');
+            images[idx].classList.add('active');
+            dots[idx].classList.add('active');
+        }
+    </script>
+</html>
